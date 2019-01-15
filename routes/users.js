@@ -13,6 +13,10 @@ const bcrypt = require('bcryptjs');
 require('../models/User')
 const User = mongoose.model('User')
 
+// Llamar middleware de autenticación
+
+const { verificaToken, verificaUsuario } = require('../server/middlewares/auth')
+
 router.get('/', (req, res) => {
     res.json({
         message: 'Hola',
@@ -20,7 +24,7 @@ router.get('/', (req, res) => {
     });
 });
 
-router.get('/usuarios', (req, res) => {
+router.get('/usuarios', verificaToken, (req, res) => {
 
     // Parámetros opciones, para paginador
     let desde = req.query.desde || 0
@@ -57,114 +61,103 @@ router.get('/usuarios', (req, res) => {
     
 });
 
-router.post('/usuarios', (req, res) => {
+router.post('/usuarios', [verificaToken, verificaUsuario], (req, res) => {
+  const { nombre, email, password, role } = req.body;
 
-    const {nombre, email, password, role } = req.body
+  let usuario = {
+    nombre,
+    email,
+    password,
+    role
+  };
 
-    let usuario = {
-        nombre,
-        email,
-        password,
-        role
-    }
+  bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.hash(usuario.password, salt, (err, hash) => {
+      if (err) {
+        throw err;
+      } else {
+        usuario.password = hash;
 
-    bcrypt.genSalt(10, (err, salt) => {
+        new User(usuario)
+          .save()
+          .then(usuario => {
+            // para engañar al usuario y no darle el password
+            //usuario.password = null;
 
-        bcrypt.hash(usuario.password, salt, (err, hash) => {
-            if(err) {
-                throw err
-            } else {
-                usuario.password = hash 
-
-                new User(usuario)
-                  .save()
-                  .then(usuario => {
-                    // para engañar al usuario y no darle el password
-                    //usuario.password = null;
-
-                    console.log(usuario);
-                    res
-                      .status(200)
-                      .json({
-                        message: 'User registered',
-                        ok: true,
-                        usuario: usuario
-                      });
-                  })
-                  .catch(err => {
-                    return res
-                      .status(400)
-                      .json({
-                        message: err,
-                        ok: false
-                      });
-                  });
-
-            }
-        })
-    })  
+            console.log(usuario);
+            res.status(200).json({
+              message: 'User registered',
+              ok: true,
+              usuario: usuario
+            });
+          })
+          .catch(err => {
+            return res.status(400).json({
+              message: err,
+              ok: false
+            });
+          });
+      }
+    });
+  });
 });
 
-router.put('/usuarios/:id', (req, res) => {
+router.put('/usuarios/:id', [verificaToken, verificaUsuario], (req, res) => {
+  let id = req.params.id;
+  let body = underscore.pick(req.body, [
+    'nombre',
+    'email',
+    'img',
+    'role',
+    'estado'
+  ]);
 
-    let id = req.params.id
-    let body = underscore.pick(req.body, ['nombre', 'email', 'img', 'role', 'estado']) 
-
-    User.findByIdAndUpdate(id, body, {runValidators: true})
-        .then(user => {
-             console.log(user);
-             res
-               .status(200)
-               .json({
-                 message: 'User updated',
-                 ok: true,
-                 usuario: user
-               });
-            
-        })
-        .catch(err => {
-            throw err; 
-        })
+  User.findByIdAndUpdate(id, body, { runValidators: true })
+    .then(user => {
+      console.log(user);
+      res.status(200).json({
+        message: 'User updated',
+        ok: true,
+        usuario: user
+      });
+    })
+    .catch(err => {
+      throw err;
+    });
 });
 
-router.delete('/usuarios/:id', (req, res) => {
-    let id = req.params.id
+router.delete('/usuarios/:id', [verificaToken, verificaUsuario], (req, res) => {
+  let id = req.params.id;
 
-    User.findById(id)
-        .then(usuario => {
-            if(usuario.estado == true) {
-                usuario.estado = false
-                // Se salva tal y como viene con la petición, en este caso no se usa User
-                usuario.save()
-                    .then(user => {
-                        res
-                            .status(200)
-                            .json({
-                                message: 'User deleted',
-                                ok: true
-                            }); 
-                    })
-                    .catch(err => {
-                        throw err
-                    })
-            } else {
-                return res
-                    .status(400)
-                    .json({
-                        message: "Usuario no encontrado",
-                        ok: false
-                    });
-            }
-        })
-        .catch(err => {
-            return res
-                .status(400)
-                .json({
-                    message: err,
-                    ok: false
-                });
-        })
-
+  User.findById(id)
+    .then(usuario => {
+      if (usuario.estado == true) {
+        usuario.estado = false;
+        // Se salva tal y como viene con la petición, en este caso no se usa User
+        usuario
+          .save()
+          .then(user => {
+            res.status(200).json({
+              message: 'User deleted',
+              ok: true
+            });
+          })
+          .catch(err => {
+            throw err;
+          });
+      } else {
+        return res.status(400).json({
+          message: 'Usuario no encontrado',
+          ok: false
+        });
+      }
+    })
+    .catch(err => {
+      return res.status(400).json({
+        message: err,
+        ok: false
+      });
+    });
 });
 
 module.exports = router 

@@ -11,7 +11,9 @@ const bodyParser = require('body-parser')
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json())
 
-const usuarios = require('../routes/users')
+// Ver el archivo index que es donde se ordenaron las rutas  
+// Nueva opción 
+const index = require('../routes/index')
 
 
 mongoose.connect(MONGOURI, 
@@ -23,6 +25,9 @@ mongoose.connect(MONGOURI,
     console.log(err)
 })
 
-app.use('/', usuarios)
+app.use('/', index)
+
 
 app.listen(PORT, () => console.log(`Escuchando el puerto: ${PORT}`));
+
+/* La idea es que el archivo server siempre se mantenga limpio */ 
