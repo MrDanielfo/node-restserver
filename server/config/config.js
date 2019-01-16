@@ -18,11 +18,18 @@ if (process.env.NODE_ENV === 'production') {
     MONGOURI = 'mongodb://localhost:27017/cafe'
 }
 
+// Google Client
+
+process.env.CLIENT_ID = process.env.CLIENT_ID || '773056045243-ae2d8734cnahe9detpb8g4vjihe8ktdb.apps.googleusercontent.com';
+
+const CLIENT = process.env.CLIENT_ID
+
 
 module.exports = {
     PORT,
     MONGOURI,
     CADUCIDAD,
-    SEED
+    SEED,
+    CLIENT
 }
 
