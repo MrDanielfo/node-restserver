@@ -130,7 +130,7 @@ router.post('/google', async(req, res) => {
 
                 new User(usuario).save()
                     .then(user => {
-                        console.log(user)
+                        //console.log(user)
                         let token = jwt.sign(
                             {
                                 user: user
@@ -139,7 +139,7 @@ router.post('/google', async(req, res) => {
                             { expiresIn: CADUCIDAD }
                         )
 
-                        return res.json({
+                         res.json({
                             ok: true,
                             user: user,
                             token: token
