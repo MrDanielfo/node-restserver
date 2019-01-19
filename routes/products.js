@@ -193,8 +193,6 @@ router.get('/productos/buscar/:termino', verificaToken, (req, res) => {
           return res.status(400).json({ message: err, ok: false });
       })
 
-
-
 })
 
 

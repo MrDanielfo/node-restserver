@@ -36,8 +36,27 @@ let verificaUsuario = (req, res, next) => {
 
 }
 
+// Token para imagen
+
+let verificaTokenImg = (req, res, next) => {
+
+    let token = req.query.token
+
+    jwt.verify(token, SEED, function (err, decoded) {
+        if (err) {
+            return res.status(401).json({ ok: false, err: { message: "Token no válido " } });
+        }
+
+        req.usuario = decoded.usuario
+        next()
+
+    });
+
+}
+
 
 module.exports = {
     verificaToken,
-    verificaUsuario
+    verificaUsuario,
+    verificaTokenImg
 }
